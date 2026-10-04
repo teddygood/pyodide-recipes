@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [noblas, reference, simd, openblas, openblas-dev]
+        variant: [noblas, reference, simd, simd-all, openblas, openblas-dev]
     env:
       PYODIDE_XBUILDENV_PATH: ${{ github.workspace }}/.numpy-blis/xbuildenv
       PYODIDE_JOBS: 3
@@ -45,6 +45,10 @@ jobs:
           export PATH="$NODE_DIR:$PATH"
           bash tools/numpy-blis/build.sh ".numpy-blis/$VARIANT" "$VARIANT"
           node tools/numpy-blis/verify.mjs ".numpy-blis/$VARIANT"
+          if [ "$VARIANT" = simd-all ]; then
+            python tools/numpy-blis/inspect_simd.py ".numpy-blis/$VARIANT" \
+              "$(pyodide config get emsdk_dir)/upstream/bin/wasm-dis"
+          fi
       - name: Verify NumPy in Chromium
         env:
           VARIANT: ${{ matrix.variant }}
@@ -59,5 +63,6 @@ jobs:
           path: |
             .numpy-blis/${{ matrix.variant }}/verification.json
             .numpy-blis/${{ matrix.variant }}/artifacts.json
+            .numpy-blis/${{ matrix.variant }}/kernel-instructions.json
             .numpy-blis/${{ matrix.variant }}/logs/
             .numpy-blis/browser/verify-${{ matrix.variant }}.json
