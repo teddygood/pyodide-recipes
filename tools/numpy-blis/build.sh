@@ -21,7 +21,7 @@ RUNTIME=$(pyodide config get dist_dir)
 for file in pyodide.js pyodide.mjs pyodide.asm.mjs pyodide.asm.wasm python_stdlib.zip; do
   cp "$RUNTIME/$file" "$OUT/dist/$file"
 done
-if [ "$VARIANT" != noblas ]; then
+if [ "$VARIANT" = reference ] || [ "$VARIANT" = simd ]; then
   emcc "$ROOT/tools/numpy-blis/dispatch_probe.c" \
     -I"$OUT/build/.libs/include/blis" -sSIDE_MODULE=1 -O2 \
     -o "$OUT/dispatch_probe.so"
