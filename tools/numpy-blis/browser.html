@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>NumPy BLAS experiment</title>
+<script type="module">
+import { verifyRuntime } from "./verify_runtime.mjs";
+
+window.runExperiment = async ({ output, manifest, verify }) => {
+  const info = await (await fetch(output + "/variant.json")).json();
+  const { loadPyodide } = await import(output + "/dist/pyodide.mjs");
+  const py = await loadPyodide({ indexURL: output + "/dist/" });
+  await py.loadPackage("numpy");
+  if (verify) {
+    const probe = info.backend === "blis"
+      ? new Uint8Array(await (await fetch(output + "/dispatch_probe.so")).arrayBuffer()) : null;
+    const correctness = await (await fetch("./correctness.py")).text();
+    const result = await verifyRuntime(py, info, probe, correctness);
+    if (result.correctness.failures.length) throw new Error("Correctness failed");
+    return result;
+  }
+  py.globals.set("bench_manifest", JSON.stringify(manifest));
+  py.globals.set("expected_backend", info.backend);
+  py.runPython(`import numpy as np
+blas = np.show_config(mode="dicts")["Build Dependencies"]["blas"]
+assert np.__version__ == "2.4.6"
+if expected_backend != "none":
+    assert blas["name"] == ("openblas-experiment" if expected_backend == "openblas" else expected_backend) and blas["found"]
+else:
+    assert not blas.get("found", False)
+`);
+  py.runPython(await (await fetch("./benchmark.py")).text());
+  return { ...JSON.parse(py.globals.get("benchmark_json")), variant: info.variant };
+};
+</script>

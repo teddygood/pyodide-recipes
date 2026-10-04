@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [noblas, reference, simd]
+        variant: [noblas, reference, simd, openblas, openblas-dev]
     env:
       PYODIDE_XBUILDENV_PATH: ${{ github.workspace }}/.numpy-blis/xbuildenv
       PYODIDE_JOBS: 3
@@ -45,6 +45,13 @@ jobs:
           export PATH="$NODE_DIR:$PATH"
           bash tools/numpy-blis/build.sh ".numpy-blis/$VARIANT" "$VARIANT"
           node tools/numpy-blis/verify.mjs ".numpy-blis/$VARIANT"
+      - name: Verify NumPy in Chromium
+        env:
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          python -m pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+          python tools/numpy-blis/run_browser.py --verify --variants "$VARIANT"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -53,3 +60,4 @@ jobs:
             .numpy-blis/${{ matrix.variant }}/verification.json
             .numpy-blis/${{ matrix.variant }}/artifacts.json
             .numpy-blis/${{ matrix.variant }}/logs/
+            .numpy-blis/browser/verify-${{ matrix.variant }}.json
