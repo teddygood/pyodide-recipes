@@ -2,9 +2,9 @@
 <meta charset="utf-8">
 <title>NumPy BLAS experiment</title>
 <script type="module">
-import { verifyRuntime } from "./verify_runtime.mjs";
+import { verifyRuntime, loadBlisProbe } from "./verify_runtime.mjs";
 
-window.runExperiment = async ({ output, manifest, verify }) => {
+window.runExperiment = async ({ output, manifest, verify, complexMethod = "default" }) => {
   const info = await (await fetch(output + "/variant.json")).json();
   const { loadPyodide } = await import(output + "/dist/pyodide.mjs");
   const py = await loadPyodide({ indexURL: output + "/dist/" });
@@ -17,6 +17,11 @@ window.runExperiment = async ({ output, manifest, verify }) => {
     if (result.correctness.failures.length) throw new Error("Correctness failed");
     return result;
   }
+  if (info.backend === "blis" && complexMethod !== "default") {
+    const bytes = new Uint8Array(await (await fetch(output + "/dispatch_probe.so")).arrayBuffer());
+    const {probe} = await loadBlisProbe(py, bytes);
+    probe.probe_set_native(complexMethod === "native" ? 1 : 0);
+  }
   py.globals.set("bench_manifest", JSON.stringify(manifest));
   py.globals.set("expected_backend", info.backend);
   py.runPython(`import numpy as np
@@ -28,6 +33,6 @@ else:
     assert not blas.get("found", False)
 `);
   py.runPython(await (await fetch("./benchmark.py")).text());
-  return { ...JSON.parse(py.globals.get("benchmark_json")), variant: info.variant };
+  return { ...JSON.parse(py.globals.get("benchmark_json")), variant: info.variant, complex_method: complexMethod };
 };
 </script>
