@@ -1,0 +1,23 @@
+package:
+  name: libblis
+  version: "2.1"
+source:
+  url: https://github.com/teddygood/blis/archive/9c32fa424cc48d988cfcd0a98176f1ac3c9ae817.tar.gz
+  sha256: a8a5d979432c2cecc60e143a0872f88de24972299fdb2208be9f52af95d1bcb2
+build:
+  type: shared_library
+  script: |
+    CC=emcc AR=emar RANLIB=emranlib \
+      ./configure --disable-threading --disable-shared --enable-cblas \
+        --prefix=${WASM_LIBRARY_DIR} wasm32
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+
+    mkdir -p dist
+    emcc ${WASM_LIBRARY_DIR}/lib/libblis.a \
+      ${SIDE_MODULE_LDFLAGS} -o dist/libblis.so
+    cp dist/libblis.so ${WASM_LIBRARY_DIR}/lib/libblis.so
+about:
+  home: https://github.com/flame/blis
+  license: BSD-3-Clause
+  summary: BLAS-like Library Instantiation Software Framework

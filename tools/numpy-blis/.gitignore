@@ -1,0 +1,4 @@
+recipes/*/build.log
+recipes/*/dist/
+__pycache__/
+results/

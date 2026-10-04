@@ -1,0 +1,32 @@
+package:
+  name: numpy
+  version: 2.4.6
+  top-level:
+    - numpy
+source:
+  url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.4.6.tar.gz
+  sha256: f3a3570c4a2a16746ac2c31a7c7c7b0c186b95ce902e33db6f28094ed7387dda
+build:
+  unvendor-tests: false
+  script: |
+    export PKG_CONFIG_LIBDIR="${WASM_LIBRARY_DIR}/share/pkgconfig"
+    unset PKG_CONFIG_PATH
+    pkg-config --exists blis
+  backend-flags: |
+    setup-args=-Dblas=blis
+    setup-args=-Dlapack=none
+    setup-args=-Dallow-noblas=true
+    setup-args=--cross-file=${MESON_CROSS_FILE}
+    install-args=--tags=runtime,python-runtime,devel
+    build-dir=build
+  cflags: -Wno-return-type
+  post: |
+    rm -rf numpy/distutils/__pycache__
+    python ${PKGDIR}/../../check_config.py numpy/__config__.py
+requirements:
+  host:
+    - libblis
+about:
+  home: https://numpy.org
+  license: BSD-3-Clause
+  summary: NumPy linked to the experimental BLIS WASM SIMD kernel
