@@ -59,7 +59,19 @@ with ZipFile(wheel) as archive, TemporaryDirectory() as temp:
             exports = {item.name for item in module.get_exports()}
         assert "cblas_dgemm" in exports
         selected = "bli_dgemm_wasm32_simd128_4x4" in exports
-        assert selected == (variant == "simd")
+        assert selected == (variant in ("simd", "simd-all"))
+        if backend == "blis":
+            kernel_exports = [
+                "bli_sgemm_wasm32_simd128_4x4",
+                "bli_cgemm_wasm32_simd128_4x2",
+                "bli_zgemm_wasm32_simd128_2x2",
+            ]
+            assert all(
+                (name in exports) == (variant == "simd-all") for name in kernel_exports
+            )
+            result["additional_kernel_exports"] = [
+                name for name in kernel_exports if name in exports
+            ]
         if backend == "openblas":
             assert "openblas_get_config" in exports
         assert Path(library).name in needed, needed

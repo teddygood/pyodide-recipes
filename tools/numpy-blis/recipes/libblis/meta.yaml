@@ -1,9 +1,9 @@
 package:
   name: libblis
-  version: "2.1"
+  version: '2.1'
 source:
-  url: https://github.com/teddygood/blis/archive/9c32fa424cc48d988cfcd0a98176f1ac3c9ae817.tar.gz
-  sha256: a8a5d979432c2cecc60e143a0872f88de24972299fdb2208be9f52af95d1bcb2
+  url: https://github.com/teddygood/blis/archive/d5f64cfd50b15dac3cab039c376d850bc6384c55.tar.gz
+  sha256: d02c979c60dd5173b0779490a3210544de36aea2892970449ac7e72280b3bd66
 build:
   type: shared_library
   script: |

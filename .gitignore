@@ -138,3 +138,5 @@ packages/.libs/
 .DS_Store
 
 .numpy-blis/
+
+.numpy-blis-final/

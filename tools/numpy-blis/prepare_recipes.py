@@ -7,8 +7,17 @@ from ruamel.yaml import YAML
 
 out = Path(sys.argv[1]).resolve()
 variant = sys.argv[2]
-if variant not in ("noblas", "reference", "simd", "openblas", "openblas-dev"):
-    raise SystemExit("Choose noblas, reference, simd, openblas, or openblas-dev")
+if variant not in (
+    "noblas",
+    "reference",
+    "simd",
+    "simd-all",
+    "openblas",
+    "openblas-dev",
+):
+    raise SystemExit(
+        "Choose noblas, reference, simd, simd-all, openblas, or openblas-dev"
+    )
 if (out / "variant.json").exists():
     previous = json.loads((out / "variant.json").read_text())["variant"]
     if previous != variant:
@@ -26,9 +35,9 @@ numpy["build"]["post"] = numpy["build"]["post"].replace(
 )
 if variant == "noblas":
     numpy.pop("requirements")
-    numpy["build"]["script"] = (
-        'export PKG_CONFIG_LIBDIR="${WASM_LIBRARY_DIR}/share/pkgconfig"\nunset PKG_CONFIG_PATH\n'
-    )
+    numpy["build"][
+        "script"
+    ] = 'export PKG_CONFIG_LIBDIR="${WASM_LIBRARY_DIR}/share/pkgconfig"\nunset PKG_CONFIG_PATH\n'
     numpy["build"]["backend-flags"] = numpy["build"]["backend-flags"].replace(
         "-Dblas=blis", "-Dblas=none"
     )
@@ -48,6 +57,11 @@ with (recipes / "numpy/meta.yaml").open("w") as file:
     yaml.dump(numpy, file)
 if backend == "blis":
     blis = yaml.load((root / "recipes/libblis/meta.yaml").read_text())
+    if variant == "simd":
+        blis["source"] = {
+            "url": "https://github.com/teddygood/blis/archive/9c32fa424cc48d988cfcd0a98176f1ac3c9ae817.tar.gz",
+            "sha256": "a8a5d979432c2cecc60e143a0872f88de24972299fdb2208be9f52af95d1bcb2",
+        }
     if variant == "reference":
         blis["source"] = {
             "url": "https://github.com/teddygood/blis/archive/12da45904d7bfeb926d9be1a62485a58c22cbc2c.tar.gz",
