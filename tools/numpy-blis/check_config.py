@@ -21,8 +21,11 @@ deps = eval(
     compile(ast.Expression(dependencies), "<numpy config>", "eval"),
     {"__builtins__": {}, "bool": bool},
 )
-if deps["blas"]["name"] != "blis" or not deps["blas"]["found"]:
-    raise SystemExit("NumPy did not find BLIS")
+backend = sys.argv[2] if len(sys.argv) > 2 else "blis"
+if (
+    backend == "blis" and (deps["blas"]["name"] != "blis" or not deps["blas"]["found"])
+) or (backend == "none" and deps["blas"]["found"]):
+    raise SystemExit("Unexpected NumPy BLAS configuration")
 if deps["lapack"]["found"]:
     raise SystemExit("Expected NumPy's internal LAPACK")
-print("NumPy found BLIS; LAPACK uses the internal implementation")
+print(f"NumPy BLAS backend: {backend}; LAPACK uses the internal implementation")

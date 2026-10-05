@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "seed": 20261004,
+  "dtype": "float64",
+  "warmup_ms": 1000,
+  "batch_ms": 20,
+  "samples": 15,
+  "processes_per_variant": 3,
+  "variants": ["noblas", "reference", "simd"],
+  "schedule": [["noblas", "reference", "simd"], ["reference", "simd", "noblas"], ["simd", "noblas", "reference"]],
+  "cases": [
+    {"id": "matmul_64_C", "operation": "matmul", "m": 64, "n": 64, "k": 64, "layout": "C"},
+    {"id": "matmul_128_C", "operation": "matmul", "m": 128, "n": 128, "k": 128, "layout": "C"},
+    {"id": "matmul_256_C", "operation": "matmul", "m": 256, "n": 256, "k": 256, "layout": "C"},
+    {"id": "matmul_512_C", "operation": "matmul", "m": 512, "n": 512, "k": 512, "layout": "C"},
+    {"id": "matmul_1024_C", "operation": "matmul", "m": 1024, "n": 1024, "k": 1024, "layout": "C"},
+    {"id": "matmul_256_F", "operation": "matmul", "m": 256, "n": 256, "k": 256, "layout": "F"},
+    {"id": "matmul_512_F", "operation": "matmul", "m": 512, "n": 512, "k": 512, "layout": "F"},
+    {"id": "matmul_255_C", "operation": "matmul", "m": 255, "n": 255, "k": 255, "layout": "C"},
+    {"id": "matmul_512x64x512", "operation": "matmul", "m": 512, "n": 64, "k": 512, "layout": "C"},
+    {"id": "matmul_256_transposed", "operation": "matmul", "m": 256, "n": 256, "k": 256, "layout": "transpose"},
+    {"id": "matmul_256_strided", "operation": "matmul", "m": 256, "n": 256, "k": 256, "layout": "strided"},
+    {"id": "dot_256_C", "operation": "dot", "m": 256, "n": 256, "k": 256, "layout": "C"},
+    {"id": "dot_512_C", "operation": "dot", "m": 512, "n": 512, "k": 512, "layout": "C"}
+  ],
+  "cpu_affinity": 0
+}
