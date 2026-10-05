@@ -17,13 +17,24 @@ parser.add_argument("--verify", action="store_true")
 parser.add_argument(
     "--variants",
     nargs="+",
-    default=["noblas", "reference", "simd", "openblas", "openblas-dev"],
+    default=None,
+)
+parser.add_argument(
+    "--manifest", type=Path, default=root / "tools/numpy-blis/benchmark-manifest.json"
 )
 args = parser.parse_args()
 out = (root / args.output).resolve()
 if not out.is_relative_to(root):
     raise SystemExit("Output must be inside the repository")
-manifest = json.loads((root / "tools/numpy-blis/benchmark-manifest.json").read_text())
+manifest = json.loads(args.manifest.read_text())
+args.variants = args.variants or manifest["variants"]
+arms = manifest.get("arms", {})
+
+
+def build_variant(variant):
+    return arms.get(variant, {}).get("build", variant)
+
+
 manifest["variants"] = args.variants
 if args.verify:
     manifest["processes_per_variant"] = 1
@@ -61,7 +72,7 @@ try:
             variants = args.variants[round_id:] + args.variants[:round_id]
             for variant in variants:
                 verification = json.loads(
-                    (out / variant / "verification.json").read_text()
+                    (out / build_variant(variant) / "verification.json").read_text()
                 )
                 assert (
                     verification["correctness"]["passed"] == 1004
@@ -80,11 +91,15 @@ try:
                         {
                             "output": base
                             + "/"
-                            + str((out / variant).relative_to(root)),
+                            + str((out / build_variant(variant)).relative_to(root)),
                             "manifest": current,
                             "verify": args.verify,
+                            "complexMethod": arms.get(variant, {}).get(
+                                "complex_method", "default"
+                            ),
                         },
                     )
+                    result["variant"] = variant
                     result["browser"] = browser.version
                     result["user_agent"] = page.evaluate("navigator.userAgent")
                     result["manifest"] = current
@@ -101,7 +116,9 @@ finally:
     server.shutdown()
 if not args.verify:
     artifacts = {
-        variant: json.loads((out / variant / "artifacts.json").read_text())
+        variant: json.loads(
+            (out / build_variant(variant) / "artifacts.json").read_text()
+        )
         for variant in args.variants
     }
     assert (

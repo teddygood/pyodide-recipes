@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "seed": 20261005,
+  "warmup_ms": 1000,
+  "batch_ms": 20,
+  "samples": 15,
+  "processes_per_variant": 4,
+  "cpu_affinity": 0,
+  "variants": ["baseline-native", "new-native"],
+  "arms": {
+    "baseline-native": {"build": "simd", "complex_method": "native"},
+    "new-native": {"build": "simd-all", "complex_method": "native"}
+  },
+  "cases": [
+    {"id": "complex64_matmul_128_C", "dtype": "complex64", "operation": "matmul", "m": 128, "n": 128, "k": 128, "layout": "C"},
+    {"id": "complex64_matmul_256_C", "dtype": "complex64", "operation": "matmul", "m": 256, "n": 256, "k": 256, "layout": "C"},
+    {"id": "complex64_matmul_512_C", "dtype": "complex64", "operation": "matmul", "m": 512, "n": 512, "k": 512, "layout": "C"},
+    {"id": "complex128_matmul_128_C", "dtype": "complex128", "operation": "matmul", "m": 128, "n": 128, "k": 128, "layout": "C"},
+    {"id": "complex128_matmul_256_C", "dtype": "complex128", "operation": "matmul", "m": 256, "n": 256, "k": 256, "layout": "C"},
+    {"id": "complex128_matmul_512_C", "dtype": "complex128", "operation": "matmul", "m": 512, "n": 512, "k": 512, "layout": "C"}
+  ]
+}
