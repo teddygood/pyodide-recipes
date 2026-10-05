@@ -136,3 +136,5 @@ pyodide
 packages/.libs/
 
 .DS_Store
+
+.numpy-blis/
