@@ -8,14 +8,19 @@ from zipfile import ZipFile
 from auditwheel_emscripten.emscripten_tools.webassembly import Module
 
 out = Path(sys.argv[1])
-variant = json.loads((out / "variant.json").read_text())["variant"]
+variant_info = json.loads((out / "variant.json").read_text())
+variant = variant_info["variant"]
+backend = variant_info["backend"]
 (wheel,) = (out / "dist").glob("numpy-*.whl")
 assert wheel.name.endswith("cp315-cp315-pyemscripten_2026_5_wasm32.whl")
 with ZipFile(wheel) as archive, TemporaryDirectory() as temp:
     libraries = [
         name
         for name in archive.namelist()
-        if name.startswith("numpy.libs/libblis") and name.endswith(".so")
+        if name.startswith(
+            "numpy.libs/libblis" if backend == "blis" else "numpy.libs/libopenblas"
+        )
+        and name.endswith(".so")
     ]
     (core,) = (
         name
@@ -55,12 +60,14 @@ with ZipFile(wheel) as archive, TemporaryDirectory() as temp:
         assert "cblas_dgemm" in exports
         selected = "bli_dgemm_wasm32_simd128_4x4" in exports
         assert selected == (variant == "simd")
+        if backend == "openblas":
+            assert "openblas_get_config" in exports
         assert Path(library).name in needed, needed
         result.update(
             {
-                "vendored_blis": library,
-                "blis_bytes": len(blis),
-                "blis_sha256": hashlib.sha256(blis).hexdigest(),
+                "vendored_" + backend: library,
+                backend + "_bytes": len(blis),
+                backend + "_sha256": hashlib.sha256(blis).hexdigest(),
                 "candidate_kernel_exported": selected,
             }
         )

@@ -7,15 +7,19 @@ from ruamel.yaml import YAML
 
 out = Path(sys.argv[1]).resolve()
 variant = sys.argv[2]
-if variant not in ("noblas", "reference", "simd"):
-    raise SystemExit("Choose noblas, reference, or simd")
+if variant not in ("noblas", "reference", "simd", "openblas", "openblas-dev"):
+    raise SystemExit("Choose noblas, reference, simd, openblas, or openblas-dev")
 if (out / "variant.json").exists():
     previous = json.loads((out / "variant.json").read_text())["variant"]
     if previous != variant:
         raise SystemExit("Use a separate output directory for each variant")
 root = Path(__file__).parent
 yaml = YAML()
-backend = "none" if variant == "noblas" else "blis"
+backend = (
+    "none"
+    if variant == "noblas"
+    else ("openblas" if variant.startswith("openblas") else "blis")
+)
 numpy = yaml.load((root / "recipes/numpy/meta.yaml").read_text())
 numpy["build"]["post"] = numpy["build"]["post"].replace(
     "numpy/__config__.py", f"numpy/__config__.py {backend}"
@@ -28,11 +32,21 @@ if variant == "noblas":
     numpy["build"]["backend-flags"] = numpy["build"]["backend-flags"].replace(
         "-Dblas=blis", "-Dblas=none"
     )
+if backend == "openblas":
+    numpy["requirements"]["host"] = ["libopenblas"]
+    numpy["build"]["script"] = (
+        numpy["build"]["script"]
+        .replace("share/pkgconfig", "lib/pkgconfig")
+        .replace("blis", "openblas-experiment")
+    )
+    numpy["build"]["backend-flags"] = numpy["build"]["backend-flags"].replace(
+        "-Dblas=blis", "-Dblas=openblas-experiment"
+    )
 recipes = out / "recipes"
 (recipes / "numpy").mkdir(parents=True, exist_ok=True)
 with (recipes / "numpy/meta.yaml").open("w") as file:
     yaml.dump(numpy, file)
-if variant != "noblas":
+if backend == "blis":
     blis = yaml.load((root / "recipes/libblis/meta.yaml").read_text())
     if variant == "reference":
         blis["source"] = {
@@ -42,6 +56,17 @@ if variant != "noblas":
     (recipes / "libblis").mkdir(exist_ok=True)
     with (recipes / "libblis/meta.yaml").open("w") as file:
         yaml.dump(blis, file)
+if backend == "openblas":
+    openblas = yaml.load((root / "recipes/libopenblas/meta.yaml").read_text())
+    if variant == "openblas-dev":
+        openblas["package"]["version"] = "0.3.35.dev0"
+        openblas["source"] = {
+            "url": "https://github.com/OpenMathLib/OpenBLAS/archive/539bb47f020d3278a05805f86c1ac63326b8a3d1.tar.gz",
+            "sha256": "b3fffa95edf413afd7b5f032a88aeb46581515b6f2607295fcdb0ba072b4b637",
+        }
+    (recipes / "libopenblas").mkdir(exist_ok=True)
+    with (recipes / "libopenblas/meta.yaml").open("w") as file:
+        yaml.dump(openblas, file)
 shutil.copyfile(root / "check_config.py", out / "check_config.py")
 (out / "variant.json").write_text(
     json.dumps({"variant": variant, "backend": backend}) + "\n"

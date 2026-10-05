@@ -14,8 +14,8 @@ py.globals.set("expected_backend", variant.backend);
 py.runPython(`import numpy as np
 blas = np.show_config(mode="dicts")["Build Dependencies"]["blas"]
 assert np.__version__ == "2.4.6"
-if expected_backend == "blis":
-    assert blas["name"] == "blis" and blas["found"]
+if expected_backend != "none":
+    assert blas["name"] == ("openblas-experiment" if expected_backend == "openblas" else expected_backend) and blas["found"]
 else:
     assert not blas.get("found", False)
 `);

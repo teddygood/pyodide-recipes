@@ -22,8 +22,12 @@ deps = eval(
     {"__builtins__": {}, "bool": bool},
 )
 backend = sys.argv[2] if len(sys.argv) > 2 else "blis"
+expected_name = "openblas-experiment" if backend == "openblas" else backend
+if backend not in ("none", "blis", "openblas"):
+    raise SystemExit("Unknown BLAS backend")
 if (
-    backend == "blis" and (deps["blas"]["name"] != "blis" or not deps["blas"]["found"])
+    backend != "none"
+    and (deps["blas"]["name"] != expected_name or not deps["blas"]["found"])
 ) or (backend == "none" and deps["blas"]["found"]):
     raise SystemExit("Unexpected NumPy BLAS configuration")
 if deps["lapack"]["found"]:
